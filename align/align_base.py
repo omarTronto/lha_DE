@@ -8,6 +8,7 @@ from distance import nlevenshtein
 from langdetect import detect
 from linecache_light import LineCache
 from tqdm import *
+from gensim.models.keyedvectors import KeyedVectors
 
 from preprocessing.file_tools import wc
 from tools.text_similarity import *
@@ -92,11 +93,11 @@ class AlignerBase:
         self.check_overlap = False
 
         self.search_k_multiply = 2
-
         # load sent2vec
-        import sent2vec
-        self.w2v = sent2vec.Sent2vecModel()
-        self.w2v.load_model('/home/nikola/data/raw/wiki/wiki_unigrams.bin')
+        #import sent2vec
+        #self.w2v = sent2vec.Sent2vecModel()
+        self.w2v = KeyedVectors.load_word2vec_format('models/fast_text_txt.vec', binary=False)
+        #self.w2v.load_model('/home/nikola/data/raw/wiki/wiki_unigrams.bin')
         logging.info("Loaded sent2vec model")
 
     def get_src_line(self, i):
@@ -113,7 +114,7 @@ class AlignerBase:
 
     def get_sent2vec_emb(self, str):
         str = clean_text(str, lower=True)
-        embedding = embed_text(str, self.w2v, None, 600, mode="sent2vec", clean=False)
+        embedding = embed_text(str, self.w2v, None, 600, mode="avg", clean=False)
         return embedding[0]
 
     def get_tgt_emb(self, idx):
@@ -155,8 +156,9 @@ class AlignerBase:
             if src_emb is None or tgt_emb is None:
                 src_emb = np.array([self.get_src_emb(idx) for idx in src_indices], dtype=float)
                 tgt_emb = np.array([self.get_tgt_emb(idx) for idx in tgt_indices], dtype=float)
-            src_emb = np.nan_to_num(src_emb)
-            tgt_emb = np.nan_to_num(tgt_emb)
+            src_emb = np.nan_to_num(src_emb).reshape(-1, 1)
+            tgt_emb = np.nan_to_num(tgt_emb).reshape(-1, 1)
+            print('shapesss', src_emb.shape, tgt_emb.shape)
             similarity_matrix = cosine_similarity(src_emb, tgt_emb)
             # Remove NAN, Make sure simiarlity is between 0 and 1.
             similarity_matrix = np.nan_to_num(similarity_matrix)
@@ -169,8 +171,8 @@ class AlignerBase:
             else:
                 return similarity_matrix
         except Exception as e:
-            print(src_emb.shape)
-            print(tgt_emb.shape)
+            #print(src_emb.shape)
+            #print(tgt_emb.shape)
             raise e
 
     def bm25_sim_matrix(self, src_indices, tgt_indices, index_source=True, monitor_progress=True):
@@ -178,7 +180,7 @@ class AlignerBase:
         if monitor_progress:
             pbar = tqdm(total=len(src_indices) if index_source is True else len(tgt_indices), desc="BM25 matrix")
 
-        print(base_matrix.shape)
+        #print(base_matrix.shape)
 
         src_lines = [clean_text(self.get_src_line(s)) for s in src_indices]
         tgt_lines = [clean_text(self.get_tgt_line(t)) for t in tgt_indices]

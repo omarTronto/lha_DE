@@ -1,7 +1,7 @@
 """Code for computing embeddings of text."""
 
 import numpy as np
-from lha.preprocessing.clean_text import clean_text
+from preprocessing.clean_text import clean_text
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
@@ -28,8 +28,8 @@ def get_word_vectors(txt, vector_dict, vector_size, weights=None, skip_missing=T
 def get_word_vector_dic(txt, w2v):
     vectors = {}
     for word in txt:
-        if word in w2v.wv.vocab:
-            word_embedding = w2v.wv[word]
+        if word in w2v:
+            word_embedding = w2v[word]
             vectors[word] = word_embedding
     return vectors
 
@@ -87,7 +87,7 @@ def tf_idf_top_k_embedding(sentence, vector_dict, vector_size, tfidf_model, top_
             return v
         return np.ones(top_k) * np.nan
     except Exception as e:
-        print(sentence)
+        #print(sentence)
         raise e
 
 

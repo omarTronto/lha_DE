@@ -5,8 +5,8 @@ import logging
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import cosine_similarity
-from lha.tools.embeddings import get_word_vector_list
-from lha.preprocessing.clean_text import clean_stem, clean_text
+from tools.embeddings import get_word_vector_list
+from preprocessing.clean_text import clean_stem, clean_text
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 

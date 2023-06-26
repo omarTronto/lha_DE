@@ -1,4 +1,45 @@
-# Large-scale Hierarchical Alignment
+# Large-scale Hierarchical Alignment (Adapted for German Local ALignment)
+
+As a part of the paper ["DEplain: A German Parallel Corpus with Intralingual Translations into Plain Language for Sentence and Document Simplification."](https://arxiv.org/abs/2305.18939), we adapted and evaluated the popular alignment methods for German text simplification automatic alignment.
+
+## DEplain's adaptation to the original method:
+
+- Disabling the first level of the method (aligning the documents) as we already had the true document alignments
+- Modifying the language-dependent tools used within the algorithm to fit the German language (e.g., the stopwords list, the tokenizer model, and the word embeddings model).
+
+## DEplain's adaptation usage
+
+After cloning the repository
+
+1. Setup the environment
+```
+python3 -m venv env
+source env/bin/activate
+pip install -U pip setuptools
+pip install -r requirements.txt
+```
+
+2. Get the word embeddings model
+```
+wget -P models/ https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.de.300.vec.gz
+gzip -d models/cc.de.300.vec.gz
+```
+
+3. Run the aligner method to get both the results and the evaluation scores
+```
+python german_aligner.py \
+-src path/to/complex_doc \ `document per line`
+-tgt path/to/simple_doc \ `document per line`
+-gold_src path/to/complex_sentences \ `sentence per line`
+-gold_tgt path/to/simple_sentences \ `sentence per line`
+-out_dir path/to/output_dir \
+-batch_size 1 \
+-w2v_model_path models/cc.de.300.vec \
+-vec_size 300 \
+-rolling_thresholds 0.5 0.7 0.8 0.9
+```
+
+## LHA Original README starts here
 
 <!-- ![Large-scale Hierarchical Alignment](lha.png?raw=true | width=300) -->
 <img src="./lha.png" width="500" >

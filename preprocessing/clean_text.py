@@ -11,7 +11,7 @@ from nltk.tokenize import ToktokTokenizer
 toktok = ToktokTokenizer().tokenize
 
 # Remove stopwords and punctuation
-stop = stopwords.words('english') + list(string.punctuation)
+stop = stopwords.words('german') + list(string.punctuation)
 
 tokenizer = RegexpTokenizer(r'\w+')
 porter_stemmer = PorterStemmer()

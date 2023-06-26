@@ -10,4 +10,5 @@ matplotlib
 tqdm
 distance
 langdetect
-cPickle
+scikit-learn
+pyemd

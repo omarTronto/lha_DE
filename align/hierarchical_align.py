@@ -5,7 +5,7 @@ import os
 import nltk
 from multiprocessing import Process, Manager, cpu_count
 import itertools
-
+import sys
 from align.align_base import AlignerBase
 
 
@@ -19,6 +19,7 @@ class HierarchicalAligner(AlignerBase):
         self.min_len = 4
         self.len_ratio_max = 10
         self.global_pairs = global_pairs
+        
         if self.global_pairs is not None:
             logging.warning("Document pairs already provided. Skipping document alignment.")
 
@@ -29,6 +30,7 @@ class HierarchicalAligner(AlignerBase):
         src_output_fname = "{}/{}.hier.{}".format(dir_path, src_name, self.ref_similarity_metric)
         tgt_output_fname = "{}/{}.hier.{}".format(dir_path, tgt_name, self.ref_similarity_metric)
         similarities_fname = "{}/{}.{}.sims.{}".format(dir_path, src_name, tgt_name, self.ref_similarity_metric)
+        
         self.src_output_file = open(src_output_fname, "w")
         self.tgt_output_file = open(tgt_output_fname, "w")
         self.src_doc_ids = open("{}.id".format(src_output_fname), "w")
@@ -37,18 +39,22 @@ class HierarchicalAligner(AlignerBase):
 
     def predict_batch(self, silent=False, lower_document_sim_th=0.5):
         """Compute prediction in batch mode, for big datasets."""
-        total_target = self.get_tgt_count()
+        
+        total_target = self.get_tgt_count() # no. target docs
         batch_size = int(total_target / self.batch_size)
         batches = np.array_split(np.arange(total_target), batch_size)
+        
         if not silent:
             logging.warning("Batch size: {}".format(len(batches[0])))
 
         if not silent:
-            pbar = tqdm(total=len(batches), desc='Global align batch')
+            pbar = tqdm(total=len(batches), desc='Global align batch (need to fix this)')
+        
         for i, batch in enumerate(batches):
             if self.global_pairs is not None:
                 # We already have the global pairs available
                 document_pair_prediction = [self.global_pairs[i] for i in batch]
+                
             else:
                 # Document (Global) alignment
                 similarity_matrix = self.global_similarity_struct_parallel(
@@ -184,10 +190,14 @@ class HierarchicalAligner(AlignerBase):
         # Load the source/target documents from disk
         src_idx = [p[0] for p in doc_prediction]
         tgt_idx = [p[1] for p in doc_prediction]
-
+        #print(doc_prediction) # [(0,0)]
+        #sys.exit("STOP HERE! ----------------------------")
+        
         # Embed all sentences in the current batch
         src_docs = zip(src_idx, [self.get_src_line(idx) for idx in src_idx])
         src_results = self.parallel_embed(src_docs, size=len(src_idx), txt="src")
+        #print("src_results", src_results)
+        #sys.exit('STOP HERE -----------------------')
         for d_id, sentences, sentence_embeddings in src_results:
             src_all_lines[d_id] = sentences
             src_all_embs[d_id] = sentence_embeddings
@@ -318,7 +328,7 @@ class HierarchicalAligner(AlignerBase):
 
         return out_pairs, all_similarities, sentence_doc_ids
 
-    def sentence_alignment(self, doc_prediction, parallel_run=True):
+    def sentence_alignment(self, doc_prediction, parallel_run=False):
         """
         Perform sentence alignment
 
@@ -330,9 +340,16 @@ class HierarchicalAligner(AlignerBase):
         # Embed the sentences in the selected documents
         src_all_lines, tgt_all_lines, src_all_embs, tgt_all_embs = \
             self.compute_all_sentence_embeddings_parallel(doc_prediction)
+        
+        # returns all tokenized sentences with their embs (one value for each sent)
+       
         # Compute similarity matrices for each document pair
         sim_matrices = self.all_sent_align_sim_matrices(
             doc_prediction, src_all_embs, tgt_all_embs, src_all_lines, tgt_all_lines)
+        # 
+        print("sim_matrices" ,sim_matrices)
+        
+        
         # Compose the final list of aligned sentence pairs.
         return self.sentence_prediction(
             src_all_lines, tgt_all_lines, doc_prediction, sim_matrices)
